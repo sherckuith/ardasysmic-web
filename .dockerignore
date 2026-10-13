@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+public_research/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.env.local
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
