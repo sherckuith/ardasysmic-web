@@ -1,0 +1,72 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   ARDASYSMIC — design tokens (Tailwind CSS 4 @theme)
+   ========================================================================== */
+@theme {
+  /* ARDASYSMIC brand palette */
+  --color-cyan: #00A8FF;
+  --color-deepblue: #1B4B8F;
+  --color-orange: #FF7F00;
+  --color-amber: #F26B1D;
+
+  /* dark surface stack */
+  --color-ink: #050709;
+  --color-ink2: #0A0E1A;
+  --color-background: #050709;
+  --color-foreground: #E6E9F0;
+  --color-card: #0A0E1A;
+  --color-card-foreground: #E6E9F0;
+
+  /* semantic roles */
+  --color-primary: #00A8FF;
+  --color-primary-foreground: #050709;
+  --color-secondary: #FF7F00;
+  --color-secondary-foreground: #050709;
+  --color-muted: #141A25;
+  --color-muted-foreground: #8BA1B3;
+  --color-accent: #FF7F00;
+  --color-accent-foreground: #050709;
+  --color-destructive: #FF7F00;
+  --color-destructive-foreground: #050709;
+  --color-border: #1F3144;
+  --color-input: #1F3144;
+  --color-ring: #00A8FF;
+  --color-ring-offset-background: #050709;
+
+  /* typography */
+  --font-family-display: "Space Grotesk", Inter, system-ui, sans-serif;
+  --font-family-body: Inter, system-ui, sans-serif;
+  --font-family-mono: "Fira Code", "Fira Mono", ui-monospace, monospace;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4rem;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Distinctive display face */
+.font-display {
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+}
+
+/* Reduced-motion guard */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,814 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ARDASYSMIC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Concept: papel de registro sísmico. Una sola identidad oscura (tinta azul pizarra), traza turquesa = señal, ámbar = evento. */
+:root{
+  color-scheme:dark;
+  --ink:#0b131b;
+  --ink2:#101c27;
+  --ink3:#17293a;
+  --line:#1f3144;
+  --paper:#dde7ee;
+  --mute:#8ba1b3;
+  --trace:#3fd0c9;
+  --event:#f2b84b;
+  --dot:#2a4156;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+html,body{overflow-x:clip}
+html.intro-lock{overflow:hidden}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--body);font-size:1rem;line-height:1.6;padding-block:0 7rem}
+a{color:inherit}
+h1,h2,h3,p{margin:0}
+.wrap{width:min(1120px,100% - 2rem);margin-inline:auto}
+section{position:relative;padding-block:5.5rem 0;scroll-margin-top:1rem}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--trace)}
+h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(2.1rem,5.4vw,3.6rem);line-height:.98;letter-spacing:.01em;text-wrap:balance;margin-top:.7rem;max-width:20ch}
+.lead{color:var(--mute);max-width:62ch;margin-top:1rem;font-size:1.05rem}
+:focus-visible{outline:2px solid var(--event);outline-offset:3px;border-radius:4px}
+
+/* ---------- Intro ---------- */
+#intro{position:fixed;inset:0;z-index:100;background:var(--ink);display:grid;place-items:center;clip-path:inset(0 0 0 0);transition:clip-path .9s cubic-bezier(.7,0,.2,1)}
+#intro.leave{clip-path:inset(0 0 100% 0)}
+#intro[hidden]{display:none}
+#intro::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.38;mask-image:radial-gradient(ellipse at center,#000 25%,transparent 78%)}
+#ic{position:absolute;inset:0;width:100%;height:100%}
+.i-center{position:relative;text-align:center;padding-inline:1rem;transform:translateY(-8vh)}
+.i-wm{font-family:var(--display);font-weight:800;font-size:clamp(2.6rem,12vw,7.4rem);letter-spacing:.07em;line-height:1;color:var(--paper);text-shadow:0 0 38px rgba(63,208,201,.28)}
+.i-tag{font-family:var(--mono);font-size:clamp(.68rem,2.4vw,.86rem);letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-top:1rem;opacity:0;transform:translateY(8px);transition:opacity .7s,transform .7s}
+.i-tag.show{opacity:1;transform:none}
+.i-skip{position:absolute;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));background:none;border:1px solid var(--line);color:var(--mute);font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:.55rem .9rem;border-radius:999px;cursor:pointer}
+.i-skip:hover{color:var(--paper);border-color:var(--mute)}
+
+/* ---------- Scroll progress, dock, blur ---------- */
+.sp{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--trace),var(--event))}
+.pblur{position:fixed;left:0;right:0;bottom:0;height:7rem;z-index:40;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask-image:linear-gradient(to top,#000 20%,transparent);-webkit-mask-image:linear-gradient(to top,#000 20%,transparent)}
+.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(.9rem + env(safe-area-inset-bottom,0px));z-index:50;display:flex;align-items:flex-end;gap:.2rem;padding:.4rem;border-radius:18px;background:rgba(16,28,39,.82);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);max-width:calc(100% - 1rem);overflow-x:auto;scrollbar-width:none}
+.dock::-webkit-scrollbar{display:none}
+.dock a{flex:none;text-decoration:none;font-size:.78rem;font-weight:500;padding:.55rem .75rem;border-radius:12px;color:var(--mute);transform-origin:50% 100%;transition:color .2s,background .2s;will-change:transform}
+.dock a:hover{color:var(--paper)}
+.dock a[aria-current="true"]{color:var(--ink);background:var(--trace)}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;padding-block:1.4rem 0;overflow:hidden}
+#pc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.topbar{position:relative;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:var(--display);font-weight:800;letter-spacing:.14em;font-size:1.25rem}
+.brand svg{width:34px;height:22px}
+.loc{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:right}
+.hero-body{position:relative;padding-block:4.2rem 3rem}
+.pill{display:inline-flex;align-items:center;gap:.55rem;border:1px solid var(--line);background:rgba(16,28,39,.7);border-radius:999px;padding:.38rem .95rem;font-size:.84rem}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--trace);box-shadow:0 0 0 0 rgba(63,208,201,.6);animation:pulse 2.2s infinite}
+.shiny{background:linear-gradient(110deg,var(--mute) 35%,var(--paper) 50%,var(--mute) 65%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shiny 3.4s linear infinite}
+h1{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(2.9rem,9vw,6.6rem);line-height:.9;letter-spacing:.005em;text-wrap:balance;margin-top:1.3rem;max-width:14ch}
+.grad{background:linear-gradient(90deg,var(--trace),var(--event),var(--trace));background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradmove 5s linear infinite}
+.hero-sub{max-width:58ch;color:var(--mute);margin-top:1.4rem;font-size:1.08rem}
+.hero-sub b{color:var(--paper);font-weight:600}
+.rot{margin-top:1.1rem;font-family:var(--mono);font-size:.95rem;color:var(--paper);min-height:1.7em}
+.rot .wr{display:inline-block;color:var(--event);transition:opacity .3s,filter .3s,transform .3s}
+.rot .wr.out{opacity:0;filter:blur(6px);transform:translateY(.4em)}
+.cta-row{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2rem}
+
+/* buttons */
+.shimmer{position:relative;overflow:hidden;isolation:isolate;display:inline-flex;align-items:center;border-radius:999px;padding:.9rem 1.6rem;background:var(--ink2);color:var(--paper);border:1px solid var(--line);font:500 .98rem var(--body);text-decoration:none;cursor:pointer}
+.shimmer::before{content:"";position:absolute;inset:-100%;background:conic-gradient(from 0deg,transparent 0 300deg,var(--trace) 360deg);animation:spin 3s linear infinite;z-index:-2}
+.shimmer::after{content:"";position:absolute;inset:1.5px;border-radius:inherit;background:var(--ink2);z-index:-1}
+.ihb{position:relative;overflow:hidden;isolation:isolate;display:inline-flex;align-items:center;gap:.7rem;border-radius:999px;border:1px solid var(--mute);padding:.9rem 1.5rem .9rem 2.3rem;color:var(--paper);font:500 .98rem var(--body);text-decoration:none;background:transparent;cursor:pointer;transition:color .35s}
+.ihb::before{content:"";position:absolute;left:1.05rem;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--paper);transition:transform .45s cubic-bezier(.6,0,.2,1);z-index:-1}
+.ihb:hover{color:var(--ink)}
+.ihb:hover::before{transform:scale(60)}
+.ihb span{transition:transform .35s}
+.ihb:hover span{transform:translateX(4px)}
+
+/* seismogram */
+.seis{position:relative;margin-top:.5rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(rgba(11,19,27,.55),rgba(11,19,27,.8))}
+#sc{display:block;width:100%;height:168px}
+.seis-ch{position:absolute;left:.7rem;font-family:var(--mono);font-size:.7rem;color:var(--mute);letter-spacing:.08em}
+.seis-meta{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.55rem 0;font-family:var(--mono);font-size:.7rem;color:var(--mute);letter-spacing:.06em}
+.seis-meta b{color:var(--trace);font-weight:500}
+
+/* ---------- Stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:3rem;border-top:1px solid var(--line)}
+.stat{padding:1.3rem 1.1rem 1.3rem 0}
+.stat+.stat{padding-left:1.1rem;border-left:1px solid var(--line)}
+.stat .n{font-family:var(--display);font-weight:800;font-size:clamp(2.4rem,6vw,3.8rem);line-height:1;color:var(--paper);font-variant-numeric:tabular-nums}
+.stat .n small{font-size:.5em;color:var(--trace);margin-left:.15em}
+.stat p{color:var(--mute);font-size:.88rem;margin-top:.5rem;max-width:22ch}
+
+/* ---------- Marquees ---------- */
+.band{padding-block:2.4rem 0}
+.marquee{display:flex;overflow:hidden;gap:2.4rem;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.mq-track{display:flex;flex:none;align-items:center;gap:2.4rem;min-width:100%;justify-content:space-around;animation:mq 46s linear infinite}
+.marquee:hover .mq-track{animation-play-state:paused}
+.mq-track span{font-family:var(--mono);font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);white-space:nowrap}
+.mq-track span::before{content:"+";color:var(--event);margin-right:1rem}
+.sv{overflow:hidden;white-space:nowrap;padding-block:.4rem}
+.sv-in{display:inline-flex;will-change:transform}
+.sv-in span{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(3rem,9vw,6.4rem);line-height:1;padding-right:2.6rem;color:transparent;-webkit-text-stroke:1px var(--dot)}
+.sv-in span.f{color:var(--ink3);-webkit-text-stroke:0}
+
+/* ---------- Cards ---------- */
+.mc{position:relative;overflow:hidden;background:var(--ink2);border:1px solid var(--line);border-radius:14px}
+.mc::before{content:"";position:absolute;inset:0;background:radial-gradient(300px circle at var(--mx,50%) var(--my,-40%),rgba(63,208,201,.14),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
+.mc:hover::before{opacity:1}
+.mc>*{position:relative;z-index:1}
+.beam::after,.shine::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.beam::after{background:conic-gradient(from var(--a),transparent 0 72%,var(--trace) 90%,var(--event) 100%);animation:ang 7s linear infinite}
+.shine::after{background:linear-gradient(115deg,var(--trace),var(--event),var(--trace),var(--event));background-size:300% 100%;animation:gradmove 6s linear infinite}
+.dots{position:absolute;inset:0;background-image:radial-gradient(var(--dot) 1px,transparent 1.4px);background-size:22px 22px;mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%);pointer-events:none;opacity:.7}
+
+/* ---------- Equipos ---------- */
+.eq{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:2.6rem}
+.eq .mc{padding:1.8rem;display:flex;flex-direction:column;gap:1rem;min-width:0}
+.eq h3{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:2.6rem;line-height:1;letter-spacing:.02em}
+.eq h3 small{display:block;font-family:var(--mono);font-weight:400;font-size:.72rem;letter-spacing:.14em;color:var(--event);margin-bottom:.5rem}
+.eq p{color:var(--mute)}
+.chs{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:auto;padding-top:.6rem}
+.ch{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.76rem;letter-spacing:.06em;border:1px solid var(--line);background:var(--ink);border-radius:8px;padding:.4rem .7rem}
+.ch i{width:6px;height:6px;border-radius:50%;background:var(--trace);animation:pulse 2.4s infinite}
+.ch.g i{background:var(--event)}
+.chip{display:inline-block;font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);color:var(--mute);border-radius:999px;padding:.18rem .65rem}
+.term{margin-top:1.2rem;border:1px solid var(--line);border-radius:12px;background:#080f15;overflow:hidden}
+.term-h{display:flex;align-items:center;gap:.45rem;padding:.6rem .9rem;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.7rem;color:var(--mute);letter-spacing:.06em}
+.term-h i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.term-h span{margin-left:.5rem}
+.term pre{margin:0;padding:1rem;font-family:var(--mono);font-size:.78rem;line-height:1.75;color:var(--paper);min-height:9.4rem;overflow-x:auto;white-space:pre}
+.term .ok{color:var(--trace)}
+.term .ev{color:var(--event)}
+.term .cur{display:inline-block;width:.55em;height:1em;background:var(--paper);vertical-align:-.15em;animation:blink 1s steps(1) infinite}
+
+/* ---------- Bento ---------- */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:1rem;margin-top:2.6rem;position:relative}
+.bento .mc{padding:1.5rem;display:flex;flex-direction:column;gap:.7rem;min-width:0;text-decoration:none;color:inherit}
+.bento .s3{grid-column:span 3}.bento .s2{grid-column:span 2}.bento .s4{grid-column:span 4}
+.bento h3{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:1.9rem;line-height:1;letter-spacing:.02em}
+.bento p{color:var(--mute);font-size:.95rem}
+.bento .tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:auto;padding-top:.5rem}
+.bento a.mc:hover{border-color:var(--mute)}
+.go{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--trace);margin-top:.2rem}
+
+/* ---------- Flow ---------- */
+.flowbox{position:relative;margin-top:2.6rem;border:1px solid var(--line);border-radius:16px;background:var(--ink2);padding:2.4rem 1.6rem;overflow:hidden}
+.flow{position:relative;display:flex;justify-content:space-between;align-items:center;gap:2rem}
+.flow-svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;overflow:visible}
+.flow .col{position:relative;z-index:1;display:flex;flex-direction:column;gap:1.6rem}
+.node{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:.9rem 1.2rem;min-width:11.5rem}
+.node b{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:1.35rem;display:block;line-height:1.1}
+.node small{font-family:var(--mono);font-size:.7rem;color:var(--mute);letter-spacing:.04em}
+.node.big{border-color:var(--trace);padding:1.3rem 1.5rem}
+.p-base{fill:none;stroke:var(--line);stroke-width:1.6}
+.p-beam{fill:none;stroke:var(--trace);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:14 86;animation:dash 3.2s linear infinite}
+.uses{display:grid;grid-template-columns:1fr 1fr;gap:2.4rem;margin-top:2.6rem;align-items:start}
+.alist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem;min-height:15rem}
+.alist li{display:flex;align-items:center;gap:.9rem;border:1px solid var(--line);background:var(--ink2);border-radius:12px;padding:.85rem 1.1rem;font-weight:500}
+.alist li.in{animation:slidein .5s ease}
+.alist li i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--event)}
+.src-note{font-family:var(--mono);font-size:.7rem;color:var(--mute);letter-spacing:.04em;margin-top:.9rem}
+
+/* ---------- Autor ---------- */
+.autor{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:3rem;margin-top:2.6rem;align-items:start}
+.mono-av{width:96px;height:96px;border-radius:20px;border:1px solid var(--line);background:var(--ink2);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:2.8rem;color:var(--trace);letter-spacing:.04em}
+.autor h3{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:2.3rem;line-height:1;margin-top:1.1rem;letter-spacing:.02em}
+.autor .role{color:var(--mute);margin-top:.5rem}
+.tr{font-size:clamp(1.35rem,3vw,1.9rem);line-height:1.35;font-weight:500;color:var(--paper)}
+.tr span{opacity:.28;transition:opacity .15s}
+.tl{list-style:none;margin:2rem 0 0;padding:0 0 0 1.3rem;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:1.3rem}
+.tl li{position:relative}
+.tl li::before{content:"";position:absolute;left:calc(-1.3rem - 4px);top:.55rem;width:7px;height:7px;border-radius:50%;background:var(--trace)}
+.tl .y{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;color:var(--event)}
+.tl b{display:block;font-weight:600}
+.tl span.d{color:var(--mute);font-size:.92rem}
+
+/* ---------- Referencias ---------- */
+.refs{list-style:none;margin:2.4rem 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:.9rem 2.4rem}
+.refs li{border-top:1px solid var(--line);padding-top:.9rem;font-size:.92rem;color:var(--mute);min-width:0;overflow-wrap:anywhere}
+.refs li b{color:var(--paper);font-weight:500}
+.refs a{color:var(--trace);text-underline-offset:3px}
+.refs .k{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--event);display:block;margin-bottom:.25rem}
+
+/* ---------- CTA ---------- */
+.cta{position:relative;overflow:hidden;border-radius:20px;background:var(--ink2);padding:clamp(2.2rem,6vw,4.5rem) clamp(1.4rem,5vw,3.5rem);margin-top:0}
+.cta>*:not(.retro):not(.meteors){position:relative;z-index:2}
+.cta h2{max-width:16ch}
+.retro{position:absolute;inset:0;overflow:hidden;perspective:280px;opacity:.55;pointer-events:none;mask-image:linear-gradient(to top,#000,transparent 75%);-webkit-mask-image:linear-gradient(to top,#000,transparent 75%)}
+.retro i{position:absolute;left:-50%;right:-50%;top:35%;height:200%;transform:rotateX(62deg);transform-origin:50% 0;background-image:linear-gradient(var(--dot) 1px,transparent 1px),linear-gradient(90deg,var(--dot) 1px,transparent 1px);background-size:56px 56px;animation:grid 3s linear infinite}
+.meteors{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.meteor{position:absolute;top:-10px;width:2px;height:2px;border-radius:50%;background:var(--paper);opacity:0;transform:rotate(215deg);animation:meteor linear infinite}
+.meteor::before{content:"";position:absolute;top:50%;transform:translateY(-50%);width:64px;height:1px;background:linear-gradient(90deg,var(--paper),transparent)}
+
+footer{padding-block:3.2rem 0;color:var(--mute);font-size:.88rem}
+.foot{display:flex;justify-content:space-between;gap:1.4rem;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:1.6rem}
+.foot p{max-width:56ch}
+.foot button{background:none;border:1px solid var(--line);color:var(--mute);font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:.55rem .9rem;border-radius:999px;cursor:pointer;align-self:flex-start}
+.foot button:hover{color:var(--paper);border-color:var(--mute)}
+.links{display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:1.6rem}
+.links a{color:var(--paper);text-underline-offset:4px}
+
+/* blur fade */
+.js .bf{opacity:0;filter:blur(6px);transform:translateY(14px);transition:opacity .7s ease,filter .7s ease,transform .7s ease;transition-delay:var(--d,0s)}
+.js .bf.on{opacity:1;filter:none;transform:none}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ang{to{--a:360deg}}
+@keyframes gradmove{to{background-position:-250% 0}}
+@keyframes shiny{from{background-position:150% 0}to{background-position:-100% 0}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,208,201,.55)}70%{box-shadow:0 0 0 8px rgba(63,208,201,0)}100%{box-shadow:0 0 0 0 rgba(63,208,201,0)}}
+@keyframes mq{to{transform:translateX(calc(-100% - 2.4rem))}}
+@keyframes dash{from{stroke-dashoffset:14}to{stroke-dashoffset:-86}}
+@keyframes slidein{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+@keyframes blink{50%{opacity:0}}
+@keyframes grid{from{background-position:0 0,0 0}to{background-position:0 56px,0 0}}
+@keyframes meteor{0%{transform:rotate(215deg) translateX(0);opacity:1}70%{opacity:1}100%{transform:rotate(215deg) translateX(-540px);opacity:0}}
+
+@media (max-width:860px){
+  .eq,.uses,.autor,.refs{grid-template-columns:1fr}
+  .bento{grid-template-columns:1fr 1fr}
+  .bento .s3,.bento .s4,.bento .s2{grid-column:span 2}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat:nth-child(3){padding-left:0;border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line)}
+  .flow{flex-direction:column;gap:3rem}
+  .node{min-width:0;width:100%}
+  .flow .col{width:100%}
+  .loc{display:none}
+}
+@media (max-width:480px){
+  .bento{grid-template-columns:1fr}
+  .bento .s3,.bento .s4,.bento .s2{grid-column:span 1}
+  section{padding-block:4rem 0}
+  .eq .mc{padding:1.3rem}
+  .flowbox{padding:1.6rem 1rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .js .bf{opacity:1;filter:none;transform:none}
+  .mq-track{animation:none}
+  #intro{display:none}
+}
+</style>
+
+<script>document.documentElement.classList.add('js')</script>
+
+<div class="sp" id="sp"></div>
+
+<div id="intro" role="presentation">
+  <canvas id="ic"></canvas>
+  <div class="i-center">
+    <div class="i-wm" id="iwm">ARDASYSMIC</div>
+    <div class="i-tag" id="itag">Análisis y Registro de Datos Sísmicos</div>
+  </div>
+  <button class="i-skip" id="iskip" type="button">Saltar intro</button>
+</div>
+
+<header class="hero" id="inicio">
+  <canvas id="pc"></canvas>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 34 22" fill="none" stroke="#3fd0c9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 11h9l3-8 4 16 3-8h13"/></svg>
+        ARDASYSMIC
+      </div>
+      <div class="loc">Guayaquil · Ecuador</div>
+    </div>
+    <div class="hero-body">
+      <span class="pill bf"><i></i><span class="shiny">Equipos DAS 3D y DAS 4D</span></span>
+      <h1 class="bf" style="--d:.08s">Medir el suelo para entender <span class="grad">cómo responde</span></h1>
+      <p class="hero-sub bf" style="--d:.16s">ARDASYSMIC desarrolla acelerógrafos y software para registrar, procesar y documentar datos sísmicos. Los equipos <b>DAS 3D</b> y <b>DAS 4D</b> son una invención de <b>Angel Yaguana</b>.</p>
+      <div class="rot bf" style="--d:.22s">Hacemos <span class="wr" id="wr">registro sísmico</span></div>
+      <div class="cta-row bf" style="--d:.28s">
+        <a class="shimmer" href="#equipos" data-go="equipos">Ver los equipos</a>
+        <a class="ihb" href="#ecosistema" data-go="ecosistema"><span>Conocer el software</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="seis">
+    <canvas id="sc"></canvas>
+    <span class="seis-ch" style="top:.7rem">EHZ</span>
+    <span class="seis-ch" style="top:4.2rem">ENN</span>
+    <span class="seis-ch" style="top:7.7rem">ENE</span>
+  </div>
+  <div class="wrap">
+    <div class="seis-meta"><span>Registro de demostración, no es una medición real</span><span><b id="clock">--:--:--</b> UTC</span></div>
+    <div class="stats">
+      <div class="stat bf"><div class="n"><span class="tick" data-to="2">2</span></div><p>equipos propios: DAS 3D y DAS 4D</p></div>
+      <div class="stat bf" style="--d:.06s"><div class="n"><span class="tick" data-to="4">4</span></div><p>canales en tiempo real en el DAS 4D</p></div>
+      <div class="stat bf" style="--d:.12s"><div class="n"><span class="tick" data-to="4.5" data-dec="1">4.5</span><small>Hz</small></div><p>geófono del canal vertical dedicado del DAS 3D</p></div>
+      <div class="stat bf" style="--d:.18s"><div class="n"><span class="tick" data-to="11">11</span></div><p>años en monitoreo sísmico, desde 2015</p></div>
+    </div>
+  </div>
+</header>
+
+<div class="band">
+  <div class="marquee" aria-label="Estándares y métodos">
+    <div class="mq-track"><span>HVSR · Nakamura</span><span>MiniSEED</span><span>FDSN StationXML</span><span>Acelerógrafos triaxiales</span><span>Geófono 4.5 Hz</span><span>Microzonificación sísmica</span><span>Dinámica de suelos</span></div>
+    <div class="mq-track" aria-hidden="true"><span>HVSR · Nakamura</span><span>MiniSEED</span><span>FDSN StationXML</span><span>Acelerógrafos triaxiales</span><span>Geófono 4.5 Hz</span><span>Microzonificación sísmica</span><span>Dinámica de suelos</span></div>
+  </div>
+  <div class="sv" id="sv1" aria-hidden="true" style="margin-top:1.4rem"><div class="sv-in"><span>Ardasysmic</span><span class="f">DAS 3D</span><span>Ardasysmic</span><span class="f">DAS 4D</span><span>Ardasysmic</span><span class="f">DAS 3D</span><span>Ardasysmic</span><span class="f">DAS 4D</span></div></div>
+  <div class="sv" id="sv2" aria-hidden="true"><div class="sv-in"><span class="f">DAS 4D</span><span>Registro</span><span class="f">DAS 3D</span><span>Análisis</span><span class="f">DAS 4D</span><span>Registro</span><span class="f">DAS 3D</span><span>Análisis</span></div></div>
+</div>
+
+<section id="equipos">
+  <div class="wrap">
+    <div class="eyebrow bf">Instrumentación</div>
+    <h2 class="bf" data-hyper style="--d:.05s">Dos equipos, un mismo criterio</h2>
+    <p class="lead bf" style="--d:.1s">Cada equipo registra el movimiento del suelo con canales dedicados y entrega datos listos para el análisis espectral.</p>
+    <div class="eq">
+      <article class="mc bf">
+        <h3><small>Acelerógrafo y digitalizador</small>DAS 3D</h3>
+        <p>Equipo triaxial con tres canales de acelerómetro y un canal de geófono de 4.5 Hz. Sus registros son compatibles con MotusWave para procesamiento y visualización.</p>
+        <div class="chs"><span class="ch"><i></i>ACC X</span><span class="ch"><i></i>ACC Y</span><span class="ch"><i></i>ACC Z</span><span class="ch g"><i></i>GEÓFONO 4.5 Hz</span></div>
+      </article>
+      <article class="mc beam bf" style="--d:.1s">
+        <h3><small>Adquisición en tiempo real</small>DAS 4D</h3>
+        <p>Cuatro canales en tiempo real, cálculo H/V (Nakamura) y archivos MiniSEED alineados con UTC, para que cada registro quede fechado y documentado.</p>
+        <div class="chs"><span class="ch"><i></i>EHZ</span><span class="ch"><i></i>ENZ</span><span class="ch"><i></i>ENN</span><span class="ch"><i></i>ENE</span></div>
+      </article>
+    </div>
+    <div class="term bf">
+      <div class="term-h"><i></i><i></i><i></i><span>Salida ilustrativa del registro, no es una medición real</span></div>
+      <pre id="term" aria-label="Ejemplo de bitácora de registro"></pre>
+    </div>
+  </div>
+</section>
+
+<section id="ecosistema">
+  <div class="wrap">
+    <div class="eyebrow bf">Software y datos</div>
+    <h2 class="bf" data-hyper style="--d:.05s">Un ecosistema para analizar y documentar</h2>
+    <p class="lead bf" style="--d:.1s">Del registro al informe: herramientas para procesar señales, calcular curvas H/V y publicar los metadatos de cada estación.</p>
+    <div class="bento">
+      <a class="mc s4 bf" href="https://github.com/sherckuith/MotusWav-2126" target="_blank" rel="noopener">
+        <div class="dots"></div>
+        <span class="chip" style="align-self:flex-start">MATLAB · v2.0.0</span>
+        <h3>MotusWave</h3>
+        <p>Suite científica para procesamiento de señales sísmicas, análisis espectral H/V (Nakamura) y visualización en 2D y 3D.</p>
+        <span class="go">Ver repositorio →</span>
+      </a>
+      <article class="mc s2 bf" style="--d:.05s">
+        <span class="chip" style="align-self:flex-start">Rust</span>
+        <h3>TremorSys</h3>
+        <p>Motor espectral para el análisis de microtremores.</p>
+      </article>
+      <a class="mc s3 bf" href="https://github.com/sherckuith/DAS04" target="_blank" rel="noopener" style="--d:.05s">
+        <span class="chip" style="align-self:flex-start">DAS 4D</span>
+        <h3>Aplicación DAS 4D</h3>
+        <p>Visualización y adquisición con cuatro canales en tiempo real, cálculo H/V y registro MiniSEED.</p>
+        <span class="go">Ver repositorio →</span>
+      </a>
+      <article class="mc s3 bf" style="--d:.1s">
+        <span class="chip" style="align-self:flex-start">Estándar FDSN</span>
+        <h3>FDSN StationXML</h3>
+        <p>Metadatos sísmicos para describir estaciones y canales de la red en un formato estándar.</p>
+      </article>
+      <article class="mc s2 bf" style="--d:.1s">
+        <span class="chip" style="align-self:flex-start">Red</span>
+        <h3>Red DAS-Ardasysmic</h3>
+        <p>Red instrumental de estaciones DAS.</p>
+      </article>
+      <article class="mc s2 bf" style="--d:.15s">
+        <span class="chip" style="align-self:flex-start">Agentes IA</span>
+        <h3>Infonak</h3>
+        <p>Skill especializada para agentes de IA.</p>
+      </article>
+      <article class="mc s2 bf" style="--d:.2s">
+        <span class="chip" style="align-self:flex-start">Proyecto</span>
+        <h3>HVSR Promart CityMall</h3>
+        <p>Repositorio oficial del proyecto de estudio H/V.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="flujo">
+  <div class="wrap">
+    <div class="eyebrow bf">Flujo de trabajo</div>
+    <h2 class="bf" data-hyper style="--d:.05s">Del sitio al informe H/V</h2>
+    <div class="flowbox bf">
+      <div class="flow" id="flow">
+        <svg class="flow-svg" id="flowsvg" aria-hidden="true"></svg>
+        <div class="col"><div class="node" id="n1"><b>DAS 3D</b><small>3 acelerómetros + geófono</small></div><div class="node" id="n2"><b>DAS 4D</b><small>4 canales en tiempo real</small></div></div>
+        <div class="col"><div class="node big" id="n3"><b>Software ARDASYSMIC</b><small>MotusWave · TremorSys</small></div></div>
+        <div class="col"><div class="node" id="n4"><b>Informe H/V</b><small>curva y frecuencia fundamental</small></div><div class="node" id="n5"><b>Metadatos</b><small>FDSN StationXML</small></div></div>
+      </div>
+    </div>
+    <div class="uses">
+      <div>
+        <div class="eyebrow bf">Qué permite el método H/V</div>
+        <h2 class="bf" style="--d:.05s;font-size:clamp(1.8rem,4vw,2.6rem)">Un registro de tres componentes, varias lecturas del sitio</h2>
+        <p class="src-note bf">Fuentes: Molnar et al. (2022); revisión de diez años de HVSR, OGS.</p>
+      </div>
+      <ul class="alist" id="alist" aria-label="Aplicaciones del método H/V"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="autor">
+  <div class="wrap">
+    <div class="eyebrow bf">Autor</div>
+    <div class="autor">
+      <div>
+        <div class="mono-av bf">AY</div>
+        <h3 class="bf" style="--d:.05s">Angel David Yaguana Hernandez, Dr. h.c.</h3>
+        <p class="role bf" style="--d:.1s">Especialista en dinámica de suelos, ingeniería sísmica y geofísica aplicada. Inventor de los equipos DAS 3D y DAS 4D y gerente general de ARDASYSMIC.</p>
+        <ol class="tl">
+          <li class="bf"><span class="y">2010 – 2024</span><b>Diseño electrónico y sistemas embebidos</b><span class="d">Hardware Manager, All Power Microcontroller Litoral</span></li>
+          <li class="bf"><span class="y">2015 – 2024</span><b>Coordinador de CEMSIS</b><span class="d">Universidad Católica de Santiago de Guayaquil</span></li>
+          <li class="bf"><span class="y">2017</span><b>Asesor de investigación</b><span class="d">Centro de monitoreo sísmico con red de acelerógrafos para Guayaquil, UCSG</span></li>
+          <li class="bf"><span class="y">2024 – hoy</span><b>Gerente general</b><span class="d">ARDASYSMIC, Guayaquil, Ecuador</span></li>
+        </ol>
+      </div>
+      <div>
+        <p class="tr" id="tr">ARDASYSMIC nace de una idea simple: los datos sísmicos valen cuando se registran con cuidado, se procesan con método y se documentan para que otros puedan revisarlos. Por eso el equipo, el software y los metadatos se desarrollan juntos, desde Ecuador, para estudios de suelo y de ingeniería sísmica.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fuentes">
+  <div class="wrap">
+    <div class="eyebrow bf">Referencias</div>
+    <h2 class="bf" data-hyper style="--d:.05s">Fuentes y publicaciones</h2>
+    <ul class="refs">
+      <li class="bf"><span class="k">Método</span><b>Molnar, S. et al. (2022).</b> A review of the microtremor horizontal-to-vertical spectral ratio (MHVSR) method. Journal of Seismology. <a href="https://doi.org/10.1007/s10950-021-10062-9" target="_blank" rel="noopener">doi.org/10.1007/s10950-021-10062-9</a></li>
+      <li class="bf" style="--d:.04s"><span class="k">Método</span><b>A critical review of 10 years of microtremor HVSR technique.</b> OGS. <a href="https://bgo.ogs.it/node/295" target="_blank" rel="noopener">bgo.ogs.it/node/295</a></li>
+      <li class="bf" style="--d:.08s"><span class="k">Software</span><b>MotusWave v2.0.0.</b> Suite científica HVSR (Nakamura) y geofísica aplicada. <a href="https://github.com/sherckuith/MotusWav-2126" target="_blank" rel="noopener">github.com/sherckuith/MotusWav-2126</a></li>
+      <li class="bf" style="--d:.12s"><span class="k">Software</span><b>ARDASYSMIC DAS-04.</b> Aplicación de visualización y adquisición. <a href="https://github.com/sherckuith/DAS04" target="_blank" rel="noopener">github.com/sherckuith/DAS04</a></li>
+      <li class="bf" style="--d:.16s"><span class="k">Publicación</span><b>Yaguana, A. (2026).</b> Espectros de respuesta. MATLAB Central File Exchange. <a href="https://www.mathworks.com/matlabcentral/fileexchange/66702-espectros-de-respuesta" target="_blank" rel="noopener">mathworks.com/matlabcentral/fileexchange/66702</a></li>
+      <li class="bf" style="--d:.2s"><span class="k">Proyecto</span><b>UCSG (2017).</b> Diseño e implementación de un Centro de Monitoreo Sísmico con Red de Acelerógrafos para Guayaquil, I Fase. <a href="https://www.ucsg.edu.ec/wp-content/uploads/pdf/institutos/ihadic/Resumen-proyecto-21.pdf" target="_blank" rel="noopener">Resumen del proyecto (PDF)</a></li>
+    </ul>
+  </div>
+</section>
+
+<section id="contacto">
+  <div class="wrap">
+    <div class="cta mc shine bf">
+      <div class="retro"><i></i></div>
+      <div class="meteors" id="meteors"></div>
+      <div class="eyebrow">Contacto</div>
+      <h2>Hablemos de tu proyecto sísmico</h2>
+      <p class="lead">Escribe por LinkedIn o revisa el código público en GitHub.</p>
+      <div class="cta-row">
+        <a class="shimmer" href="https://www.linkedin.com/in/angeldavidyaguanahernandez/" target="_blank" rel="noopener">Contactar por LinkedIn</a>
+        <a class="ihb" href="https://github.com/sherckuith" target="_blank" rel="noopener"><span>Ver GitHub</span></a>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div class="wrap">
+      <div class="foot">
+        <p>ARDASYSMIC · Análisis y Registro de Datos Sísmicos · Guayaquil, Ecuador. Esta página describe qué hacen los equipos y programas. Sus detalles internos de diseño no se publican.</p>
+        <button type="button" id="replay">Repetir intro</button>
+      </div>
+      <div class="links">
+        <a href="https://orcid.org/0009-0005-5822-7907" target="_blank" rel="noopener">ORCID</a>
+        <a href="https://github.com/sherckuith" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/angeldavidyaguanahernandez/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+</section>
+
+<div class="pblur" aria-hidden="true"></div>
+<nav class="dock" id="dock" aria-label="Secciones">
+  <a href="#inicio" data-t="inicio">Inicio</a>
+  <a href="#equipos" data-t="equipos">Equipos</a>
+  <a href="#ecosistema" data-t="ecosistema">Software</a>
+  <a href="#flujo" data-t="flujo">Flujo</a>
+  <a href="#autor" data-t="autor">Autor</a>
+  <a href="#fuentes" data-t="fuentes">Fuentes</a>
+</nav>
+
+<script>
+(function(){
+var RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
+
+/* ---------- señal sintética (determinista) ---------- */
+function hs(i){var s=Math.sin(i*127.1+311.7)*43758.5453;return s-Math.floor(s)}
+function vn(t){var i=Math.floor(t),f=t-i,u=f*f*(3-2*f);return hs(i)*(1-u)+hs(i+1)*u}
+function sig(tp,ch,evs,ea){
+  var y=(vn(tp*26+ch*91)-.5)*.5+(vn(tp*5+ch*37)-.5)*.7;
+  for(var k=0;k<evs.length;k++){
+    var s=tp-evs[k];
+    if(s>0){var env=Math.exp(-s/1.7)*(1-Math.exp(-s*7));y+=env*ea*(ch===0?1.5:1.0)*Math.sin(s*(ch===0?30:21)+ch*1.7)}
+  }
+  return y;
+}
+function fit(c){
+  var d=Math.min(window.devicePixelRatio||1,2),r=c.getBoundingClientRect();
+  c.width=Math.max(1,Math.round(r.width*d));c.height=Math.max(1,Math.round(r.height*d));
+  var x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);
+  return {x:x,w:r.width,h:r.height};
+}
+
+/* ---------- hipertexto (scramble) ---------- */
+var ABC='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+function scramble(el,text,ms,delay){
+  if(RM){el.textContent=text;return}
+  var t0=performance.now()+(delay||0),n=text.length;
+  (function step(now){
+    var p=clamp((now-t0)/ms,0,1),out='';
+    for(var i=0;i<n;i++){
+      var ch=text[i];
+      if(ch===' '){out+=' ';continue}
+      out+=(p>=(i/n)*.85+.15*p&&p>(i/n)*.85)||p>=1?ch:ABC[Math.floor(Math.random()*ABC.length)];
+    }
+    el.textContent=p<0?text.replace(/\S/g,'·'):out;
+    if(p<1)requestAnimationFrame(step);else el.textContent=text;
+  })(performance.now());
+}
+$$('[data-hyper]').forEach(function(h){
+  var txt=h.textContent;
+  function go(){scramble(h,txt,600,0)}
+  h.addEventListener('pointerenter',go);
+  h.setAttribute('tabindex','0');
+  h.addEventListener('focus',go);
+});
+
+/* ---------- intro ---------- */
+var introSeen=false;
+try{introSeen=sessionStorage.getItem('ard_intro')==='1'}catch(e){}
+function afterIntro(){
+  startFallback();
+}
+function playIntro(){
+  var el=$('#intro');
+  if(!el)return;
+  el.hidden=false;el.classList.remove('leave');
+  document.documentElement.classList.add('intro-lock');
+  try{sessionStorage.setItem('ard_intro','1')}catch(e){}
+  var c=$('#ic'),f=fit(c),wm=$('#iwm'),tag=$('#itag'),done=false;
+  tag.classList.remove('show');
+  scramble(wm,'ARDASYSMIC',1500,300);
+  setTimeout(function(){tag.classList.add('show')},1900);
+  var t0=performance.now();
+  function finish(){
+    if(done)return;done=true;
+    el.classList.add('leave');
+    setTimeout(function(){el.hidden=true;document.documentElement.classList.remove('intro-lock');afterIntro()},950);
+  }
+  $('#iskip').onclick=finish;
+  setTimeout(finish,4100);
+  function frame(now){
+    if(done)return;
+    var w=f.w,h=f.h,x=f.x,p=clamp((now-t0)/2700,0,1),base=h*.72,amp=h*.07,evT=3.2,span=6;
+    x.clearRect(0,0,w,h);
+    var lim=w*p;
+    x.lineWidth=1.8;x.strokeStyle='#3fd0c9';x.shadowColor='rgba(63,208,201,.7)';x.shadowBlur=10;
+    x.beginPath();
+    var ly=base;
+    for(var px=0;px<=lim;px+=2){
+      var tp=px/w*span,y=base-sig(tp,0,[evT],2.6)*amp;
+      if(px===0)x.moveTo(px,y);else x.lineTo(px,y);
+      ly=y;
+    }
+    x.stroke();
+    x.shadowBlur=0;
+    x.fillStyle='#dde7ee';x.beginPath();x.arc(lim,ly,3,0,6.283);x.fill();
+    var ex=evT/span*w;
+    if(lim>ex){
+      x.strokeStyle='#f2b84b';x.lineWidth=1;x.setLineDash([4,4]);
+      x.beginPath();x.moveTo(ex,base-amp*4.4);x.lineTo(ex,base+amp*4.4);x.stroke();x.setLineDash([]);
+      x.fillStyle='#f2b84b';x.font='500 12px "JetBrains Mono",monospace';x.fillText('P',ex+6,base-amp*4.4+10);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- blur fade ---------- */
+var bfs=$$('.bf'),interacted=false;
+function revealAll(){bfs.forEach(function(e){e.classList.add('on')})}
+if('IntersectionObserver' in window){
+  var bio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');bio.unobserve(e.target)}})},{rootMargin:'0px 0px -6% 0px',threshold:.05});
+  bfs.forEach(function(e){bio.observe(e)});
+}else revealAll();
+['scroll','pointermove','touchstart','keydown'].forEach(function(n){window.addEventListener(n,function(){interacted=true},{passive:true,once:true})});
+function startFallback(){setTimeout(function(){if(!interacted)revealAll()},2200)}
+if(RM)revealAll();
+
+if(RM||introSeen){
+  var il=$('#intro');if(il)il.hidden=true;
+  startFallback();
+}else playIntro();
+$('#replay').addEventListener('click',function(){window.scrollTo(0,0);playIntro()});
+
+/* ---------- progreso de scroll, dock ---------- */
+var sp=$('#sp');
+function onScroll(){
+  var h=document.documentElement.scrollHeight-window.innerHeight;
+  sp.style.transform='scaleX('+(h>0?clamp(window.scrollY/h,0,1):0)+')';
+  updTr();
+}
+var dock=$('#dock'),dl=$$('a',dock);
+dl.forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(a.dataset.t);if(t)t.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})})});
+$$('[data-go]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(a.dataset.go);if(t)t.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})})});
+dock.addEventListener('pointermove',function(e){
+  if(e.pointerType!=='mouse'||RM)return;
+  dl.forEach(function(a){
+    var r=a.getBoundingClientRect(),d=Math.abs(e.clientX-(r.left+r.width/2)),s=1+.5*clamp(1-d/110,0,1);
+    a.style.transform='scale('+s.toFixed(3)+')';
+  });
+});
+dock.addEventListener('pointerleave',function(){dl.forEach(function(a){a.style.transform=''})});
+if('IntersectionObserver' in window){
+  var sio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){dl.forEach(function(a){a.setAttribute('aria-current',a.dataset.t===e.target.id?'true':'false')})}})},{rootMargin:'-40% 0px -50% 0px'});
+  ['inicio','equipos','ecosistema','flujo','autor','fuentes'].forEach(function(id){var s=document.getElementById(id);if(s)sio.observe(s)});
+}
+
+/* ---------- reloj UTC ---------- */
+function clk(){$('#clock').textContent=new Date().toISOString().slice(11,19)}
+clk();setInterval(clk,1000);
+
+/* ---------- rotador de palabras ---------- */
+if(!RM){
+  var wr=$('#wr'),words=['registro sísmico','análisis espectral H/V','metadatos FDSN','visualización 2D y 3D'],wi=0;
+  setInterval(function(){wr.classList.add('out');setTimeout(function(){wi=(wi+1)%words.length;wr.textContent=words[wi];wr.classList.remove('out')},320)},2700);
+}
+
+/* ---------- number ticker ---------- */
+function fmt(v,d){return v.toLocaleString('es',{minimumFractionDigits:d,maximumFractionDigits:d})}
+$$('.tick').forEach(function(el){
+  var to=parseFloat(el.dataset.to),dec=parseInt(el.dataset.dec||'0',10),ran=false;
+  function run(){
+    if(ran)return;ran=true;
+    if(RM){el.textContent=fmt(to,dec);return}
+    var t0=performance.now();
+    (function s(now){var p=clamp((now-t0)/1400,0,1),e=1-Math.pow(1-p,3);el.textContent=fmt(to*e,dec);if(p<1)requestAnimationFrame(s);else el.textContent=fmt(to,dec)})(t0);
+  }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){run();io.disconnect()}},{threshold:.6});io.observe(el);
+  }
+});
+
+/* ---------- magic card ---------- */
+$$('.mc').forEach(function(c){c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')})});
+
+/* ---------- terminal con tipeo ---------- */
+(function(){
+  var pre=$('#term');
+  var lines=[
+    ['$ ','Adquisición iniciada · 4 canales activos',''],
+    ['  ','[ok] EHZ  ENZ  ENN  ENE  sincronizados con UTC','ok'],
+    ['  ','[evento] actividad detectada en el canal vertical','ev'],
+    ['  ','[ok] archivo MiniSEED cerrado y verificado','ok'],
+    ['  ','[ok] curva H/V actualizada con la nueva ventana','ok']
+  ];
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+  function render(n,partial){
+    var h='';
+    for(var i=0;i<n;i++){h+=esc(lines[i][0])+(lines[i][2]?'<span class="'+lines[i][2]+'">'+esc(lines[i][1])+'</span>':esc(lines[i][1]))+'\n'}
+    if(partial!==undefined){var L=lines[n];h+=esc(L[0])+(L[2]?'<span class="'+L[2]+'">':'')+esc(L[1].slice(0,partial))+(L[2]?'</span>':'')+'<span class="cur"></span>'}
+    else h+='<span class="cur"></span>';
+    pre.innerHTML=h;
+  }
+  render(lines.length);
+  if(RM||!('IntersectionObserver' in window))return;
+  var started=false;
+  var io=new IntersectionObserver(function(es){
+    if(!es[0].isIntersecting||started)return;started=true;io.disconnect();
+    var li=0,ci=0;
+    render(0,0);
+    var iv=setInterval(function(){
+      ci++;
+      if(ci>lines[li][1].length){li++;ci=0;if(li>=lines.length){clearInterval(iv);render(lines.length);return}render(li,0);return}
+      render(li,ci);
+    },22);
+  },{threshold:.5});
+  io.observe(pre);
+})();
+
+/* ---------- animated list ---------- */
+(function(){
+  var items=['Frecuencia fundamental del sitio','Amplificación de sitio','Estudios de microzonificación sísmica','Frecuencia de vibración de edificios','Revisión de la calidad de cada ventana','Curvas H/V con desviación estándar'];
+  var ul=$('#alist'),idx=0,visible=[];
+  function mk(t,anim){var li=document.createElement('li');if(anim)li.className='in';li.innerHTML='<i></i><span></span>';li.lastChild.textContent=t;return li}
+  for(var i=3;i>=0;i--){ul.appendChild(mk(items[i],false))}
+  idx=4;
+  if(RM)return;
+  setInterval(function(){
+    ul.insertBefore(mk(items[idx%items.length],true),ul.firstChild);idx++;
+    while(ul.children.length>4)ul.removeChild(ul.lastChild);
+  },2400);
+})();
+
+/* ---------- flujo con haces animados ---------- */
+function beams(){
+  var box=$('#flow'),svg=$('#flowsvg');if(!box||!svg)return;
+  var b=box.getBoundingClientRect(),ns='http://www.w3.org/2000/svg';
+  svg.setAttribute('viewBox','0 0 '+b.width+' '+b.height);
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  function c(id){var r=document.getElementById(id).getBoundingClientRect();return {x:r.left-b.left+r.width/2,y:r.top-b.top+r.height/2}}
+  [['n1','n3'],['n2','n3'],['n3','n4'],['n3','n5']].forEach(function(p,i){
+    var a=c(p[0]),z=c(p[1]),d;
+    if(Math.abs(z.x-a.x)>Math.abs(z.y-a.y)){var mx=(a.x+z.x)/2;d='M'+a.x+' '+a.y+' C'+mx+' '+a.y+' '+mx+' '+z.y+' '+z.x+' '+z.y}
+    else{var my=(a.y+z.y)/2;d='M'+a.x+' '+a.y+' C'+a.x+' '+my+' '+z.x+' '+my+' '+z.x+' '+z.y}
+    var p1=document.createElementNS(ns,'path');p1.setAttribute('d',d);p1.setAttribute('class','p-base');
+    var p2=document.createElementNS(ns,'path');p2.setAttribute('d',d);p2.setAttribute('class','p-beam');p2.setAttribute('pathLength','100');p2.style.animationDelay=(i*.5)+'s';
+    svg.appendChild(p1);svg.appendChild(p2);
+  });
+}
+
+/* ---------- text reveal ---------- */
+var trEl=$('#tr'),trs=[];
+trEl.innerHTML=trEl.textContent.trim().split(/\s+/).map(function(w){return '<span>'+w+'</span>'}).join(' ');
+trs=$$('span',trEl);
+function updTr(){
+  if(RM){trs.forEach(function(s){s.style.opacity=1});return}
+  var r=trEl.getBoundingClientRect(),p=clamp((window.innerHeight*.85-r.top)/(r.height+window.innerHeight*.3),0,1),k=p*(trs.length+4);
+  for(var i=0;i<trs.length;i++){trs[i].style.opacity=(.28+.72*clamp(k-i,0,1)).toFixed(3)}
+}
+
+/* ---------- meteoros ---------- */
+(function(){
+  if(RM)return;
+  var m=$('#meteors');
+  for(var i=0;i<14;i++){
+    var s=document.createElement('span');s.className='meteor';
+    s.style.left=Math.floor(Math.random()*100)+'%';
+    s.style.animationDelay=(Math.random()*6).toFixed(2)+'s';
+    s.style.animationDuration=(3+Math.random()*5).toFixed(2)+'s';
+    m.appendChild(s);
+  }
+})();
+
+/* ---------- partículas y sismograma del hero ---------- */
+var pc=$('#pc'),sc=$('#sc'),pf,sf,parts=[],mouse={x:-999,y:-999},heroVis=true;
+function initParts(){
+  pf=fit(pc);parts=[];
+  var n=Math.round(clamp(pf.w*pf.h/16000,30,90));
+  for(var i=0;i<n;i++)parts.push({x:Math.random()*pf.w,y:Math.random()*pf.h,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.4+.5});
+}
+function drawParts(){
+  var x=pf.x;x.clearRect(0,0,pf.w,pf.h);
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i];
+    if(!RM){
+      p.x+=p.vx;p.y+=p.vy;
+      var dx=p.x-mouse.x,dy=p.y-mouse.y,d2=dx*dx+dy*dy;
+      if(d2<9000){var d=Math.sqrt(d2)||1;p.x+=dx/d*.7;p.y+=dy/d*.7}
+      if(p.x<0)p.x=pf.w;if(p.x>pf.w)p.x=0;if(p.y<0)p.y=pf.h;if(p.y>pf.h)p.y=0;
+    }
+    x.fillStyle='rgba(139,161,179,.55)';x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill();
+    for(var j=i+1;j<parts.length;j++){
+      var q=parts[j],ax=p.x-q.x,ay=p.y-q.y,dd=ax*ax+ay*ay;
+      if(dd<7500){x.strokeStyle='rgba(63,208,201,'+(.16*(1-dd/7500)).toFixed(3)+')';x.lineWidth=1;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke()}
+    }
+  }
+}
+function drawSeis(t){
+  var x=sf.x,w=sf.w,h=sf.h;x.clearRect(0,0,w,h);
+  var rows=[h*.17,h*.5,h*.83],amp=h*.12,speed=70;
+  x.lineWidth=1.3;
+  x.strokeStyle='rgba(31,49,68,.9)';
+  for(var gx=0;gx<w;gx+=44){x.beginPath();x.moveTo(gx,0);x.lineTo(gx,h);x.stroke()}
+  for(var ch=0;ch<3;ch++){
+    x.strokeStyle=ch===0?'#3fd0c9':'rgba(63,208,201,.78)';
+    x.beginPath();
+    for(var px=0;px<=w;px+=2){
+      var tp=t-(w-px)/speed,e1=Math.floor(tp/16)*16,y=rows[ch]-sig(tp,ch,[e1,e1-16],2.1)*amp;
+      if(px===0)x.moveTo(px,y);else x.lineTo(px,y);
+    }
+    x.stroke();
+  }
+}
+function layout(){initParts();sf=fit(sc);if(RM){drawParts();drawSeis(8)}beams()}
+layout();
+window.addEventListener('load',layout);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(layout);
+var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(layout,150)});
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+$('#inicio').addEventListener('pointermove',function(e){var r=pc.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
+$('#inicio').addEventListener('pointerleave',function(){mouse.x=mouse.y=-999});
+if('IntersectionObserver' in window){new IntersectionObserver(function(es){heroVis=es[0].isIntersecting},{threshold:0}).observe($('#inicio'))}
+
+/* ---------- velocidad por scroll ---------- */
+var svs=[$('#sv1'),$('#sv2')].map(function(s,i){var in_=$('.sv-in',s);return {el:in_,x:0,dir:i?1:-1}});
+var lastY=window.scrollY,vel=0;
+function loop(now){
+  if(!RM){
+    var y=window.scrollY;vel+=(Math.abs(y-lastY)-vel)*.1;lastY=y;
+    if(heroVis){drawParts();drawSeis(now/1000)}
+    svs.forEach(function(s){
+      var one=s.el.scrollWidth/2;if(!one)return;
+      s.x+=(0.6+vel*.35)*(s.dir<0?1:-1);
+      var m=((s.x%one)+one)%one;
+      s.el.style.transform='translateX('+(-m)+'px)';
+    });
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
