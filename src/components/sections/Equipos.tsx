@@ -78,7 +78,7 @@ function EquipoCard({
         {image && (
           <img
             src={image}
-            alt={`_equipo ${model}`}
+            alt={`Equipo ${name} — ${model}`}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />

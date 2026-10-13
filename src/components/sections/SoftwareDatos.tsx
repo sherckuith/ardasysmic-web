@@ -124,7 +124,7 @@ export function SoftwareDatos() {
                   item.img ? (
                     <img
                       src={item.img}
-                      alt={`_fondo ${item.name}`}
+                      alt={`Imagen de ${item.name}`}
                       className="h-full w-full object-cover object-top opacity-60 grayscale"
                     />
                   ) : (
