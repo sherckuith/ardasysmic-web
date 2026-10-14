@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react"
 import { BrandSymbol } from "@/components/BrandSymbol"
+import { BorderBeam } from "@/components/magicui/border-beam"
 import { cn } from "@/lib/utils"
 
 interface SectionHeaderProps {
@@ -56,7 +57,6 @@ function EquipoCard({
   model,
   dimensions,
   image,
-  imageLight,
   channels,
   format,
   views,
@@ -74,6 +74,7 @@ function EquipoCard({
       viewport={{ once: true }}
       transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
+      <BorderBeam size={80} duration={4} delay={delay * 2} colorFrom="#00A8FF" colorTo="#FF7F00" />
       <div className="relative aspect-[4/3] w-full overflow-hidden">
         {image && (
           <img
@@ -167,6 +168,21 @@ export function Equipos() {
       ],
       delay: 0.2,
     },
+    {
+      name: "DAS 4D",
+      model: "DAS-04-black",
+      dimensions: "1024 × 600",
+      image: "/images/das-ardasysmic/logo-das.jpg",
+      channels: ["EHZ", "ENZ", "ENN", "ENE"],
+      format: "MiniSEED",
+      views: ["Nakamura / HVSR", "MASW"],
+      description: [
+        "Adquisición sísmica de 4 componentes",
+        "Visualización en campo en tiempo real",
+        "Segmentación de trazas para análisis",
+      ],
+      delay: 0.3,
+    },
   ]
 
   return (
@@ -178,12 +194,12 @@ export function Equipos() {
         <SectionHeader
           eyebrow="Equipos DAS"
           title="Equipos de Adquisición Sísmica"
-          subtitle="Sistemas DAS 3D y DAS 4D para registro de vibraciones ambienatles y eventos sísmicos."
+          subtitle="Sistemas DAS 3D y DAS 4D para registro de vibraciones ambientales y eventos sísmicos."
           delay={0}
         />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
-          {equipos.map((e, i) => (
+          {equipos.map((e) => (
             <EquipoCard key={e.model} {...e} />
           ))}
         </div>

@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Google Fonts loaded via <link> in layout.tsx head (avoids CSS @import render blocking) */
 
 /* ==========================================================================
    ARDASYSMIC — design tokens (Tailwind CSS 4 @theme)
@@ -47,7 +48,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 4rem;
+    scroll-padding-top: 6rem;
   }
 
   body {

@@ -51,8 +51,6 @@ export function BrandIntro({
   // If reduced-motion or already seen → render nothing
   if (!visible || reduced) return null
 
-  const introDuration = reduced ? 0 : duration
-
   return (
     <motion.div
       key="brand-intro"

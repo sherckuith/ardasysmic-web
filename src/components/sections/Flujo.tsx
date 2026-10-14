@@ -68,7 +68,7 @@ export function Flujo() {
   const containerRef = useRef<HTMLDivElement>(null)
   const itemRefs = STEPS.reduce(
     (acc, step) => ({ ...acc, [step.id]: useRef<HTMLDivElement>(null) }),
-    {} as Record<string, React.RefObject<HTMLDivElement>>
+    {} as Record<string, React.RefObject<HTMLDivElement | null>>
   )
 
   return (

@@ -14,13 +14,12 @@ const nextConfig = {
     unoptimized: true,
   },
   eslint: {
-    // Fetched third-party components (Magic UI, shadcn) may carry cosmetic
-    // lint rules; lint is enforced separately via `npm run lint`.
+    // ESLint is not installed in this environment; lint is enforced separately via `npm run lint`.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Type errors are surfaced by `tsc`/IDE; keep the static export robust.
-    ignoreBuildErrors: true,
+    // Type errors must fail the build in production.
+    ignoreBuildErrors: false,
   },
   reactStrictMode: true,
   webpack(config) {

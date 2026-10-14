@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react"
 import { SeismicTrace } from "@/components/SeismicTrace"
-import { cn } from "@/lib/utils"
 
 export function Footer() {
   return (

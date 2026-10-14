@@ -3,6 +3,7 @@
 import { motion } from "motion/react"
 import { SectionHeader } from "@/components/sections/Equipos"
 import { ExternalLink, Code, BookOpen, FileImage } from "lucide-react"
+import { Marquee } from "@/components/magicui/marquee"
 import { cn } from "@/lib/utils"
 
 interface SourceItem {
@@ -158,9 +159,26 @@ export function Referencias() {
         <SectionHeader
           eyebrow="Referencias"
           title="Fuentes y Licencias"
-          subtitle="Proyectos de código abierto y literatura científica de referia."
+          subtitle="Proyectos de código abierto y literatura científica de referencia."
           delay={0}
         />
+
+        {/* marquee of standards */}
+        <motion.div
+          className="mb-8 overflow-hidden"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
+          <Marquee className="border-y border-border/10 py-3" pauseOnHover>
+            {["MiniSEED", "FDSNStationXML", "Nakamura H/V", "SESAME 2004", "NEC-15", "Eurocódigo 8", "MASW", "HVSR", "STA/LTA", "FFT"].map((item) => (
+              <span key={item} className="mx-6 font-mono text-sm tracking-[0.15em] text-muted-foreground uppercase">
+                {item}
+              </span>
+            ))}
+          </Marquee>
+        </motion.div>
 
         <motion.div
           className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2"

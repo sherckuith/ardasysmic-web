@@ -19,3 +19,12 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Large media assets (kept locally, not committed)
+Ardasysmic-*.jpg.jpeg
+Ardasysmic-splash screen.mp4
+download.png
+*.mp4
+
+# Legacy / work-in-progress directories
+_old/
