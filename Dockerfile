@@ -24,8 +24,11 @@ RUN npm run build
 # ---------- Stage 2: Serve ----------
 FROM nginx:1.27-alpine AS runner
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+# Remove default config and redirect nginx pid to a non-root-writable path.
+# The stock /var/run/nginx.pid is root-owned, so non-root USER 1001 aborts
+# with "[emerg] open() \"/run/nginx.pid\" failed (13: Permission denied)".
+RUN rm /etc/nginx/conf.d/default.conf && \
+    sed -i -E 's#^[[:space:]]*pid[[:space:]].*#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/ardasysmic.conf
@@ -33,13 +36,14 @@ COPY nginx.conf /etc/nginx/conf.d/ardasysmic.conf
 # Copy static export from builder
 COPY --from=builder /app/out /usr/share/nginx/html
 
-# Create non-root user and set permissions
+# Create non-root user and ensure all runtime dirs are writable by UID 1001
 RUN addgroup -g 1001 -S ardasysmic && \
     adduser -u 1001 -S ardasysmic -G ardasysmic && \
     chown -R ardasysmic:ardasysmic /usr/share/nginx/html && \
     chown -R ardasysmic:ardasysmic /var/cache/nginx && \
     chown -R ardasysmic:ardasysmic /var/log/nginx && \
-    chown -R ardasysmic:ardasysmic /etc/nginx/conf.d
+    chown -R ardasysmic:ardasysmic /etc/nginx/conf.d && \
+    chown -R ardasysmic:ardasysmic /tmp /run
 
 # Switch to non-root user
 USER ardasysmic
